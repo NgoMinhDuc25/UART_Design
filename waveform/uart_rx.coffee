@@ -4,9 +4,9 @@
   { name: "rx_i (Input)", wave: "1..01010010111..........", node: "...a.........b" },
   { name: "state (FSM)",  wave: "x..3444444442x.........", data: ["START", "DATA0", "DATA1", "DATA2", "DATA3", "DATA4", "DATA5", "DATA6", "DATA7", "STOP"] },
   { name: "rx_done",      wave: "0...........10.........." },
-  { name: "fifo_empty",   wave: "1...........0..........." },
+  { name: "fifo_empty",   wave: "1...........0..1........" },
   { name: "rd_en (User)", wave: "0.............10........" },
-  { name: "dout_o",       wave: "x.............5.........", data: ["0xA5"] }
+  { name: "dout_o",       wave: "x..............5........", data: ["0xA5"] }
 ],
   edge: [
     "a<->b Frame: 0xA5 (LSB First)",
