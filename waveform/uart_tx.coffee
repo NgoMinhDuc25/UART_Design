@@ -14,7 +14,7 @@
     "a~>b "
   ],
   head: {
-   text: 'UART TX Simulation Waveform (Send from FIO -> 0xA5)',
+   text: 'UART TX Simulation Waveform (Send from FIFO -> 0xA5)',
    tick: 0,
   },
  config: { hscale: 1 }
