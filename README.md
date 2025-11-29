@@ -23,6 +23,7 @@ Sơ đồ khối tổng quát của hệ thống, bao gồm các module chính: 
 
 ![Block Diagram](/public/uart_rx.png)
 *(Sơ đồ khối hệ thống UART_RX)*
+
 ![Block Diagram](/public/uart_tx.png)
 *(Sơ đồ khối hệ thống UART_TX)*
 
@@ -31,6 +32,7 @@ Luồng hoạt động của bộ thu (RX) và bộ phát (TX) được điều 
 
 ![FSM Diagram](/public/fsm_rx.png)
 ![FSM Diagram](/public/fsm_tx.png)
+
 *(Biểu đồ trạng thái FSM cho TX và RX)*
 
 
