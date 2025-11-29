@@ -38,14 +38,14 @@ Luồng hoạt động của bộ thu (RX) và bộ phát (TX) được điều 
 ## 🪢 Waveform
 ![Waveform 1](https://raw.githubusercontent.com/NgoMinhDuc25/UART_Design/refs/heads/main/public/wf_rx%20.png)
 - UART_RX
-- 
-![Waveform 2](/public/fsm_tx.png)
+ 
+![Waveform 2](/public/wf_tx.png)
 - UART_TX
 
 ## ♾️ Simulation with ModelSim
 ![Simulation 1](/public/sim_rx_1.png)
 - UART_RX
-- 
+ 
 ![Simulation 2](/public/sim_tx_1.png)
 ![Simulation 3](/public/sim_tx_2.png)
 - UART_TX
