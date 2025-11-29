@@ -36,7 +36,7 @@ Luồng hoạt động của bộ thu (RX) và bộ phát (TX) được điều 
 *(Biểu đồ trạng thái FSM cho TX và RX)*
 
 ## 🪢 Waveform
-![Waveform 1](https://raw.githubusercontent.com/NgoMinhDuc25/UART_Design/refs/heads/main/public/wf_rx%20.png)
+![Waveform 1](/public/wf_rx2.png)
 - UART_RX
  
 ![Waveform 2](/public/wf_tx.png)
