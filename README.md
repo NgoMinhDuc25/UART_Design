@@ -21,14 +21,18 @@ Giao thức được hiện thực hóa chuẩn **8N1** (1 Start bit, 8 Data bit
 ## 🏗️ Kiến trúc phần cứng (Block Diagram)
 Sơ đồ khối tổng quát của hệ thống, bao gồm các module chính: Baud Rate Generator, UART TX, UART RX và các khối FIFO.
 
-![Block Diagram](./public/block_diagram.png)
-*(Sơ đồ khối hệ thống UART)*
+![Block Diagram](/public/uart_rx.png)
+*(Sơ đồ khối hệ thống UART_RX)*
+![Block Diagram](/public/uart_tx.png)
+*(Sơ đồ khối hệ thống UART_TX)*
 
 ## 🔄 Máy trạng thái hữu hạn (FSM Diagram)
 Luồng hoạt động của bộ thu (RX) và bộ phát (TX) được điều khiển bởi các máy trạng thái (Finite State Machine) để đảm bảo tuân thủ chặt chẽ timing của giao thức UART.
 
-![FSM Diagram](./public/fsm_diagram.png)
+![FSM Diagram](/public/fsm_rx.png)
+![FSM Diagram](/public/fsm_tx.png)
 *(Biểu đồ trạng thái FSM cho TX và RX)*
+
 
 ## 📂 Cấu trúc Repository
 
