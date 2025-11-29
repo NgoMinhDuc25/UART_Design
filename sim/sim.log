@@ -1,0 +1,4 @@
+# vsim -assertdebug -do {log -r /*; run -all; quit} -l sim.log -debugDB -voptargs=+acc -c tb_uart_rx_module 
+# ** Error: (vsim-3170) Could not find 'D:/CWT/UART/my_uart/sim/work.tb_uart_rx_module'.
+# 
+# Error loading design
