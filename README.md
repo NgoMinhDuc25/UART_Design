@@ -70,3 +70,5 @@ Luồng hoạt động của bộ thu (RX) và bộ phát (TX) được điều 
 │   ├── tb_uart_tx_module.sv
 │   └── tb_uart_rx_module.sv
 └── README.md
+```
+![Tham khảo](https://www.youtube.com/watch?v=HWJfeZJb_78)
