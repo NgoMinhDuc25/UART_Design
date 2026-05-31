@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UART Synthesis Report — So sánh trước & sau tối ưu</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:    #0a1628;
+    --navy-2:  #0f2040;
+    --navy-3:  #162c52;
+    --blue:    #1a4a8a;
+    --blue-2:  #1e5db0;
+    --accent:  #3b82f6;
+    --accent-2:#60a5fa;
+    --teal:    #0ea5e9;
+    --white:   #ffffff;
+    --off-white:#f0f4fb;
+    --muted:   #8ba4c8;
+    --border:  rgba(59,130,246,0.2);
+    --border-bright: rgba(59,130,246,0.45);
+    --green:   #22c55e;
+    --amber:   #f59e0b;
+    --red:     #ef4444;
+    --gray-txt:#94a3b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── Grid background ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+  }
+
+  /* ─── Header ─── */
+  header {
+    border-bottom: 1px solid var(--border-bright);
+    padding-bottom: 32px;
+    margin-bottom: 48px;
+  }
+
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(59,130,246,0.12);
+    border: 1px solid var(--border-bright);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    margin-bottom: 20px;
+  }
+
+  .header-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; transform: scale(1); }
+    50%      { opacity:.4; transform: scale(1.4); }
+  }
+
+  h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--white);
+    line-height: 1.2;
+    margin-bottom: 10px;
+  }
+
+  h1 span { color: var(--accent-2); }
+
+  .header-sub {
+    font-size: 14px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 16px;
+  }
+
+  .header-sub span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .header-sub span::before {
+    content: '▸';
+    color: var(--accent);
+    font-size: 10px;
+  }
+
+  /* ─── Summary cards ─── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .stat-card {
+    background: var(--navy-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .stat-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--teal));
+  }
+
+  .stat-card.green::before { background: linear-gradient(90deg, var(--green), #4ade80); }
+  .stat-card.amber::before { background: linear-gradient(90deg, var(--amber), #fcd34d); }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-delta {
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .delta-good  { color: var(--green); }
+  .delta-warn  { color: var(--amber); }
+  .delta-bad   { color: var(--red); }
+  .delta-neu   { color: var(--gray-txt); }
+
+  /* ─── Section title ─── */
+  .section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    margin-top: 48px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .section-num {
+    background: var(--accent);
+    color: var(--navy);
+    font-size: 11px;
+    font-weight: 700;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ─── Tables ─── */
+  .table-wrap {
+    background: var(--navy-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead th {
+    background: var(--navy-3);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 12px 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  thead th:first-child { text-align: left; }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(59,130,246,0.08);
+    transition: background 0.15s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(59,130,246,0.06); }
+
+  tbody td {
+    padding: 11px 16px;
+    text-align: center;
+    color: var(--off-white);
+  }
+
+  tbody td:first-child {
+    text-align: left;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .mono { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+
+  /* ─── Badges ─── */
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+  }
+
+  .badge-good { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+  .badge-warn { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+  .badge-bad  { background: rgba(239,68,68,0.15);  color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+  .badge-neu  { background: rgba(148,163,184,0.1); color: var(--gray-txt); border: 1px solid rgba(148,163,184,0.2); }
+  .badge-info { background: rgba(59,130,246,0.15); color: var(--accent-2); border: 1px solid rgba(59,130,246,0.3); }
+
+  /* ─── Two-col layout ─── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* ─── Power bar ─── */
+  .power-compare {
+    background: var(--navy-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 8px;
+  }
+
+  .power-row {
+    margin-bottom: 20px;
+  }
+
+  .power-row:last-child { margin-bottom: 0; }
+
+  .power-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .power-label span:first-child { color: var(--muted); }
+  .power-label span:last-child  { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+
+  .bar-track {
+    height: 8px;
+    background: rgba(59,130,246,0.1);
+    border-radius: 4px;
+    overflow: visible;
+    position: relative;
+  }
+
+  .bar-before, .bar-after {
+    height: 8px;
+    border-radius: 4px;
+    position: absolute;
+    top: 0; left: 0;
+  }
+
+  .bar-before {
+    background: linear-gradient(90deg, #ef4444, #f97316);
+    opacity: 0.6;
+  }
+
+  .bar-after {
+    background: linear-gradient(90deg, var(--accent), var(--teal));
+    z-index: 1;
+  }
+
+  /* ─── Tech info ─── */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .tech-card {
+    background: var(--navy-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+
+  .tech-card h4 {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-2);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tech-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(59,130,246,0.06);
+  }
+
+  .tech-item:last-child { border-bottom: none; }
+  .tech-item .key { color: var(--muted); }
+  .tech-item .val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--off-white); text-align: right; max-width: 55%; word-break: break-all; }
+
+  /* ─── Conclusion box ─── */
+  .conclusion {
+    background: linear-gradient(135deg, rgba(26,74,138,0.4), rgba(14,165,233,0.15));
+    border: 1px solid var(--border-bright);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-top: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .conclusion::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--teal), var(--accent-2));
+  }
+
+  .conclusion h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+  }
+
+  .conclusion ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .conclusion li {
+    font-size: 13.5px;
+    color: var(--off-white);
+    display: flex;
+    gap: 10px;
+    line-height: 1.55;
+  }
+
+  .conclusion li::before {
+    content: '→';
+    color: var(--accent);
+    flex-shrink: 0;
+    font-family: monospace;
+    margin-top: 1px;
+  }
+
+  /* ─── Footer ─── */
+  footer {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--muted);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  footer .mono { color: var(--gray-txt); }
+
+  /* ─── Responsive ─── */
+  @media (max-width: 768px) {
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    .two-col, .tech-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 22px; }
+    .page-wrapper { padding: 28px 16px 60px; }
+  }
+
+  /* ─── Animations ─── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  @keyframes fadeUp {
+    to { opacity:1; transform: translateY(0); }
+  }
+
+  .fade-in:nth-child(1) { animation-delay: 0.05s; }
+  .fade-in:nth-child(2) { animation-delay: 0.10s; }
+  .fade-in:nth-child(3) { animation-delay: 0.15s; }
+  .fade-in:nth-child(4) { animation-delay: 0.20s; }
+
+  /* col widths for first col */
+  td:first-child, th:first-child { width: 38%; }
+</style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- ═══════════ HEADER ═══════════ -->
+  <header>
+    <div class="header-badge">Cadence Genus 23.10-p004_1 · SkyWater SKY130</div>
+    <h1>UART Synthesis Report<br><span>Phân tích trước &amp; sau tối ưu</span></h1>
+    <div class="header-sub">
+      <span>UART 16x Oversampling + FIFO Buffer</span>
+      <span>Module: uart_top</span>
+      <span>Process: SKY130 (130nm)</span>
+      <span>Clock: 12 MHz (83.33 ns)</span>
+    </div>
+  </header>
+
+  <!-- ═══════════ SUMMARY CARDS ═══════════ -->
+  <div class="summary-grid">
+    <div class="stat-card green fade-in">
+      <div class="stat-label">Leakage Power giảm</div>
+      <div class="stat-value">−92.6%</div>
+      <div class="stat-delta delta-good">3,315 nW → 245 nW</div>
+    </div>
+    <div class="stat-card fade-in">
+      <div class="stat-label">Total Area giảm</div>
+      <div class="stat-value">−5.8%</div>
+      <div class="stat-delta delta-good">42,910 → 40,440 µm²</div>
+    </div>
+    <div class="stat-card fade-in">
+      <div class="stat-label">Failing Paths</div>
+      <div class="stat-value">0</div>
+      <div class="stat-delta delta-neu">Cả trước &amp; sau tối ưu</div>
+    </div>
+    <div class="stat-card amber fade-in">
+      <div class="stat-label">CG Slack (mới)</div>
+      <div class="stat-value">2,739</div>
+      <div class="stat-delta delta-warn">ps — ICG constraint xuất hiện</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 1. TIMING ═══════════ -->
+  <div class="section-title">
+    <span class="section-num">1</span>
+    Timing &amp; Slack
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Chỉ số</th>
+          <th>Trước tối ưu</th>
+          <th>Sau tối ưu</th>
+          <th>Thay đổi</th>
+          <th>Đánh giá</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Clock period (ps)</td>
+          <td class="mono">83,330</td>
+          <td class="mono">83,330</td>
+          <td>—</td>
+          <td><span class="badge badge-neu">Giữ nguyên</span></td>
+        </tr>
+        <tr>
+          <td>Worst Slack – R2R (ps)</td>
+          <td class="mono">75,323</td>
+          <td class="mono">70,807</td>
+          <td class="delta-warn">−4,516</td>
+          <td><span class="badge badge-warn">Giảm nhẹ</span></td>
+        </tr>
+        <tr>
+          <td>Worst Slack – I2R (ps)</td>
+          <td class="mono">43,866</td>
+          <td class="mono">46,426</td>
+          <td class="delta-good">+2,560</td>
+          <td><span class="badge badge-good">Cải thiện</span></td>
+        </tr>
+        <tr>
+          <td>Worst Slack – R2O (ps)</td>
+          <td class="mono">47,524</td>
+          <td class="mono">47,189</td>
+          <td class="delta-warn">−335</td>
+          <td><span class="badge badge-neu">Gần như không đổi</span></td>
+        </tr>
+        <tr>
+          <td>Worst Slack – CG (ps)</td>
+          <td class="mono">N/A</td>
+          <td class="mono">2,739</td>
+          <td>—</td>
+          <td><span class="badge badge-warn">Mới – ICG constraint</span></td>
+        </tr>
+        <tr>
+          <td>TNS (ps)</td>
+          <td class="mono">0</td>
+          <td class="mono">0</td>
+          <td>—</td>
+          <td><span class="badge badge-good">Đạt</span></td>
+        </tr>
+        <tr>
+          <td>Failing Paths</td>
+          <td class="mono">0</td>
+          <td class="mono">0</td>
+          <td>—</td>
+          <td><span class="badge badge-good">Đạt</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════ 2. AREA ═══════════ -->
+  <div class="section-title">
+    <span class="section-num">2</span>
+    Diện tích (Area)
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Module</th>
+          <th>Trước – Cell Area (µm²)</th>
+          <th>Sau – Cell Area (µm²)</th>
+          <th>Δ Cell Area</th>
+          <th>Đánh giá</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>uart_top</strong> (tổng)</td>
+          <td class="mono">20,639.9</td>
+          <td class="mono">21,952.0</td>
+          <td class="delta-warn">+1,312 (+6.4%)</td>
+          <td><span class="badge badge-warn">Tăng do LP cells</span></td>
+        </tr>
+        <tr>
+          <td>rx_inst (RX module)</td>
+          <td class="mono">10,582.8</td>
+          <td class="mono">11,317.8</td>
+          <td class="delta-warn">+735 (+6.9%)</td>
+          <td><span class="badge badge-warn">Tăng nhẹ</span></td>
+        </tr>
+        <tr>
+          <td>tx_inst (TX module)</td>
+          <td class="mono">10,047.6</td>
+          <td class="mono">10,634.2</td>
+          <td class="delta-warn">+586 (+5.8%)</td>
+          <td><span class="badge badge-warn">Tăng nhẹ</span></td>
+        </tr>
+        <tr>
+          <td>FIFO RX (fifo_inst)</td>
+          <td class="mono">8,259.4</td>
+          <td class="mono">8,491.7</td>
+          <td class="delta-warn">+232 (+2.8%)</td>
+          <td><span class="badge badge-neu">Nhỏ</span></td>
+        </tr>
+        <tr>
+          <td>FIFO TX (fifo_inst)</td>
+          <td class="mono">8,259.4</td>
+          <td class="mono">8,518.4</td>
+          <td class="delta-warn">+259 (+3.1%)</td>
+          <td><span class="badge badge-neu">Nhỏ</span></td>
+        </tr>
+        <tr>
+          <td><strong>Net Area</strong> (tổng)</td>
+          <td class="mono">22,270.8</td>
+          <td class="mono">18,488.1</td>
+          <td class="delta-good">−3,782 (−17.0%)</td>
+          <td><span class="badge badge-good">Giảm mạnh</span></td>
+        </tr>
+        <tr>
+          <td><strong>Total Area</strong> (Cell + Net)</td>
+          <td class="mono">42,910.6</td>
+          <td class="mono">40,440.1</td>
+          <td class="delta-good">−2,470 (−5.8%)</td>
+          <td><span class="badge badge-good">Cải thiện tổng thể</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════ 3. GATES ═══════════ -->
+  <div class="section-title">
+    <span class="section-num">3</span>
+    Số lượng Gates &amp; Phân loại
+  </div>
+  <div class="two-col">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Loại cell</th>
+            <th>Trước</th>
+            <th>Sau</th>
+            <th>Δ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Tổng Leaf instances</td>
+            <td class="mono">943</td>
+            <td class="mono">934</td>
+            <td class="delta-good">−9</td>
+          </tr>
+          <tr>
+            <td>Sequential (FF)</td>
+            <td class="mono">355</td>
+            <td class="mono">355</td>
+            <td class="mono delta-neu">—</td>
+          </tr>
+          <tr>
+            <td>Combinational</td>
+            <td class="mono">588</td>
+            <td class="mono">542</td>
+            <td class="delta-good">−46</td>
+          </tr>
+          <tr>
+            <td>ICG cells (ICGPRECX1)</td>
+            <td class="mono">0</td>
+            <td class="mono">37</td>
+            <td class="delta-good">+37</td>
+          </tr>
+          <tr>
+            <td>Inverter</td>
+            <td class="mono">116</td>
+            <td class="mono">88</td>
+            <td class="delta-good">−28</td>
+          </tr>
+          <tr>
+            <td>Buffer</td>
+            <td class="mono">1</td>
+            <td class="mono">2</td>
+            <td class="delta-neu">+1</td>
+          </tr>
+          <tr>
+            <td>Hierarchical instances</td>
+            <td class="mono">16</td>
+            <td class="mono">53</td>
+            <td class="delta-info">+37 (ICG)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Phân loại</th>
+            <th>Cell Area trước</th>
+            <th>Cell Area sau</th>
+            <th>Leakage sau</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Sequential</td>
+            <td class="mono">14,730.5</td>
+            <td class="mono">13,725.0</td>
+            <td class="mono delta-good">33.8 nW</td>
+          </tr>
+          <tr>
+            <td>Inverter</td>
+            <td class="mono">662.7</td>
+            <td class="mono">672.3</td>
+            <td class="mono delta-neu">0.8 nW</td>
+          </tr>
+          <tr>
+            <td>Buffer</td>
+            <td class="mono">9.5</td>
+            <td class="mono">22.9</td>
+            <td class="mono delta-neu">0.0 nW</td>
+          </tr>
+          <tr>
+            <td>ICG (Clock Gate)</td>
+            <td class="mono">—</td>
+            <td class="mono">1,338.8</td>
+            <td class="mono delta-warn">190.7 nW</td>
+          </tr>
+          <tr>
+            <td>Logic</td>
+            <td class="mono">5,237.1</td>
+            <td class="mono">6,193.1</td>
+            <td class="mono delta-good">20.1 nW</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════ 4. POWER ═══════════ -->
+  <div class="section-title">
+    <span class="section-num">4</span>
+    Công suất rò rỉ (Leakage Power)
+  </div>
+
+  <div class="power-compare">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:32px;">
+
+      <div>
+        <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:18px;">So sánh theo thành phần</div>
+
+        <div class="power-row">
+          <div class="power-label">
+            <span>Sequential (FF)</span>
+            <span style="color:var(--green);">33.8 nW <span style="color:var(--muted);">← 2,911 nW</span></span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-before" style="width:87.8%"></div>
+            <div class="bar-after" style="width:1.02%"></div>
+          </div>
+        </div>
+
+        <div class="power-row">
+          <div class="power-label">
+            <span>Logic comb.</span>
+            <span style="color:var(--green);">20.1 nW <span style="color:var(--muted);">← 339 nW</span></span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-before" style="width:10.2%"></div>
+            <div class="bar-after" style="width:0.6%"></div>
+          </div>
+        </div>
+
+        <div class="power-row">
+          <div class="power-label">
+            <span>ICG cells (mới)</span>
+            <span style="color:var(--amber);">190.7 nW</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-after" style="width:5.8%; background: linear-gradient(90deg, var(--amber), #fcd34d);"></div>
+          </div>
+        </div>
+
+        <div class="power-row" style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+          <div class="power-label">
+            <span style="font-weight:600; color:var(--white);">TỔNG LEAKAGE</span>
+            <span style="color:var(--green); font-weight:600;">245.5 nW <span style="color:var(--muted);">← 3,315 nW</span></span>
+          </div>
+          <div class="bar-track" style="height:12px; border-radius:6px;">
+            <div class="bar-before" style="width:100%; height:12px; border-radius:6px;"></div>
+            <div class="bar-after" style="width:7.4%; height:12px; border-radius:6px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:18px;">Phân bổ theo thư viện (sau tối ưu)</div>
+
+        <div style="background: var(--navy-3); border-radius:8px; padding:16px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; color:var(--muted);">sky130_ss_1.62_125 (Standard)</span>
+            <span style="font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--off-white);">5% · 47 cells</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-after" style="width:5%;"></div>
+          </div>
+        </div>
+
+        <div style="background: var(--navy-3); border-radius:8px; padding:16px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; color:var(--muted);">sky130_ss_1.62_125<strong>_LP</strong> (Low Power)</span>
+            <span style="font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--green);">95% · 887 cells</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-after" style="width:95%;"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px; padding:12px 14px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); border-radius:8px; font-size:12px; color:#4ade80; line-height:1.6;">
+          ✓ 95% instances đã được ánh xạ sang <strong>LP cells</strong><br>
+          → Giảm leakage <strong>92.6%</strong> so với baseline
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 5. LIBRARY & TECH ═══════════ -->
+  <div class="section-title">
+    <span class="section-num">5</span>
+    Thư viện &amp; Công nghệ
+  </div>
+  <div class="tech-grid">
+    <div class="tech-card">
+      <h4>Trước tối ưu</h4>
+      <div class="tech-item"><span class="key">Thư viện slow</span><span class="val">sky130_ss_1.62_125</span></div>
+      <div class="tech-item"><span class="key">Thư viện fast</span><span class="val">sky130_ff_1.98_0</span></div>
+      <div class="tech-item"><span class="key">Thư viện typ</span><span class="val">sky130_tt_1.8_25</span></div>
+      <div class="tech-item"><span class="key">LP variant</span><span class="val" style="color:#fca5a5;">Không có</span></div>
+      <div class="tech-item"><span class="key">HS variant</span><span class="val" style="color:#fca5a5;">Không có</span></div>
+      <div class="tech-item"><span class="key">Ngày chạy</span><span class="val">May 11, 2026</span></div>
+      <div class="tech-item"><span class="key">Tổng runtime</span><span class="val">00:01:00</span></div>
+      <div class="tech-item"><span class="key">Peak memory</span><span class="val">1,651.6 MB</span></div>
+    </div>
+    <div class="tech-card">
+      <h4>Sau tối ưu</h4>
+      <div class="tech-item"><span class="key">Thư viện slow</span><span class="val">ss_1.62_125 + LP + HS</span></div>
+      <div class="tech-item"><span class="key">Thư viện fast</span><span class="val">ff_1.98_0 + LP + HS</span></div>
+      <div class="tech-item"><span class="key">Thư viện typ</span><span class="val">sky130_tt_1.8_25</span></div>
+      <div class="tech-item"><span class="key">LP variant</span><span class="val" style="color:#4ade80;">Có — 95% cells</span></div>
+      <div class="tech-item"><span class="key">HS variant</span><span class="val" style="color:#4ade80;">Có — critical path</span></div>
+      <div class="tech-item"><span class="key">Ngày chạy</span><span class="val">May 13, 2026</span></div>
+      <div class="tech-item"><span class="key">Tổng runtime</span><span class="val">00:01:09 (+9s)</span></div>
+      <div class="tech-item"><span class="key">Peak memory</span><span class="val">1,758.2 MB (+106 MB)</span></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 6. QoR FLOW ═══════════ -->
+  <div class="section-title">
+    <span class="section-num">6</span>
+    QoS Flow — Slack theo từng giai đoạn (ps)
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Run</th>
+          <th>Generic</th>
+          <th>Map</th>
+          <th>Syn_opt</th>
+          <th>Final</th>
+          <th>TNS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-neu">Trước tối ưu</span></td>
+          <td class="mono">46,282</td>
+          <td class="mono">43,647</td>
+          <td class="mono">43,866</td>
+          <td class="mono">43,866</td>
+          <td class="mono delta-good">0</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-info">Sau tối ưu</span></td>
+          <td class="mono">5,535</td>
+          <td class="mono">3,850</td>
+          <td class="mono">2,739</td>
+          <td class="mono">2,739</td>
+          <td class="mono delta-good">0</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted); font-style:italic;">Ghi chú</td>
+          <td colspan="4" style="text-align:left; color:var(--gray-txt); font-size:12px;">Slack CG thấp hơn do thêm ICG path — R2R/I2R vẫn rất dư</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════ CONCLUSION ═══════════ -->
+  <div class="conclusion">
+    <h3>Kết luận tổng quan</h3>
+    <ul>
+      <li><strong>Leakage Power giảm 92.6%</strong> (3,315 → 245 nW): Cải thiện vượt trội nhờ ánh xạ 95% cells sang thư viện Low Power (_LP). Đây là lợi ích lớn nhất của lần tối ưu này, phù hợp mục tiêu thiết kế nhúng/IoT.</li>
+      <li><strong>Total Area giảm 5.8%</strong> (42,910 → 40,440 µm²): Mặc dù cell area tăng ~6.4% (LP cells có footprint lớn hơn), net area giảm mạnh 17% giúp tổng diện tích thu nhỏ lại.</li>
+      <li><strong>Clock Gating (37 ICG cells)</strong> được kích hoạt: Tạo thêm constraint CG với slack 2,739 ps — an toàn, nhưng cần theo dõi kỹ ở giai đoạn P&amp;R khi có routing delay thực tế.</li>
+      <li><strong>Logic combinational giảm</strong> từ 588 → 542 cells (−7.8%): Công cụ đã loại bỏ được các logic thừa trong quá trình re-mapping với cell mới.</li>
+      <li><strong>Timing vẫn hoàn toàn đạt</strong>: TNS = 0, Failing paths = 0 ở cả hai lần chạy. Design an toàn với clock 12 MHz trên SKY130.</li>
+    </ul>
+  </div>
+
+  <!-- ═══════════ FOOTER ═══════════ -->
+  <footer>
+    <span>UART 16x Oversampling + FIFO · uart_top · SkyWater SKY130</span>
+    <span class="mono">Genus™ Synthesis Solution 23.10-p004_1</span>
+  </footer>
+
+</div>
+</body>
+</html>
