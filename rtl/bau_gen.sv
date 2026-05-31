@@ -1,4 +1,3 @@
-
 module baurate_gen #(parameter BAUDCOUNT = 78) (
     input clk,
     input rst_n,

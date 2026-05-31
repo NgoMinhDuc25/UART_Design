@@ -1,0 +1,52 @@
+
+
+Working Directory = /home/ngominhduc/Documents/VKU_Project/UART_Design/synth
+QoS Summary for uart_top
+==========================================================================================
+Metric                          generic         map             syn_opt         final          
+==========================================================================================
+Slack (ps):                     5,535           3,850           2,739           2,739
+  R2R (ps):                    78,000          71,940          70,807          70,807
+  I2R (ps):                    47,588          46,427          46,426          46,426
+  R2O (ps):                    47,644          47,164          47,189          47,189
+  I2O (ps):                  no_value        no_value        no_value        no_value
+  CG  (ps):                     5,535           3,850           2,739           2,739
+TNS (ps):                           0               0               0               0
+  R2R (ps):                         0               0               0               0
+  I2R (ps):                         0               0               0               0
+  R2O (ps):                         0               0               0               0
+  I2O (ps):                  no_value        no_value        no_value        no_value
+  CG  (ps):                         0               0               0               0
+Failing Paths:                      0               0               0               0
+Leakage Power (nW):             3,069             245             245             245
+Cell Area:                      1,411          22,405          21,952          21,952
+Total Cell Area:                1,411          22,405          21,952          21,952
+Leaf Instances:                 1,442             944             934             934
+Total Instances:                1,442             944             934             934
+Utilization (%):                 0.00            0.00            0.00            0.00
+Tot. Net Length (um):        no_value        no_value        no_value        no_value
+Avg. Net Length (um):        no_value        no_value        no_value        no_value
+Route Overflow H (%):        no_value        no_value        no_value        no_value
+Route Overflow V (%):        no_value        no_value        no_value        no_value
+MBCI(%) (bits/gate) :            0.00            0.00            0.00            0.00
+Norm Cong Hotspot Area:
+  Max Cong:                  no_value        no_value        no_value        no_value
+  Tot Cong:                  no_value        no_value        no_value        no_value
+==========================================================================================
+CPU  Runtime (h:m:s):        00:00:40        00:00:12        00:00:11        00:00:00
+Real Runtime (h:m:s):        00:00:37        00:00:14        00:00:13        00:00:02
+CPU  Elapsed (h:m:s):        00:00:43        00:00:55        00:01:06        00:01:06
+Real Elapsed (h:m:s):        00:00:37        00:00:52        00:01:04        00:01:06
+Memory (MB):                  1746.32         1745.60         1758.24         1758.24
+==========================================================================================
+==========================================================================================
+Flow Settings:
+==========================================================================================
+Total Runtime (h:m:s): 00:01:09
+Total Memory (MB):     1758.24
+Executable Version:    23.10-p004_1
+==========================================================================================
+Total Cell Area =  Cell Area + Physical Cell Area
+Total Instances =  Leaf Instances + Physical Instances
+
+

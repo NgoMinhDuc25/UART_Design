@@ -3,7 +3,7 @@ module uart_rx #(parameter DATA_WIDTH = 8) (
     input wire rst_n_i,
     input wire s_tick,
     input wire rx_i,
-    output reg [DATA_WIDTH-1:0] dout_o,
+    output wire [DATA_WIDTH-1:0] dout_o,
     output reg rx_done_o
   );
 
@@ -19,19 +19,11 @@ module uart_rx #(parameter DATA_WIDTH = 8) (
   reg [count_width-1:0] scount, next_scount; //count for s_tick
   reg [data_width-1:0] ncount, next_ncount; //count for data bits
   reg [DATA_WIDTH-1:0] data_reg, next_data_reg; //data shift register
-  reg meta, rx; //uart meta buffer
+  reg [DATA_WIDTH-1:0] meta, rx; //uart meta buffer
   reg [1:0] state, next_state;
   reg next_rxdone;
 
-    //assign dout_o = rx_done_o ? data_reg : dout_o;
-
-    // Thay thế lệnh assign cũ bằng khối logic sau:
-    always @(posedge clk) begin
-        if (!rst_n_i)
-            dout_o <= 0;
-        else if (rx_done_o) // Chỉ cập nhật khi nhận xong dữ liệu
-            dout_o <= data_reg;
-    end
+  assign dout_o = rx_done_o ? data_reg : dout_o;
 
   always @(posedge clk)
   begin: output_assignment
@@ -42,7 +34,7 @@ module uart_rx #(parameter DATA_WIDTH = 8) (
       ncount <= 0;
       data_reg <= 0;
       rx_done_o <= 0;
-      //rx <= 0;
+      rx <= 0;
     end
     else
     begin
@@ -139,13 +131,8 @@ module uart_rx #(parameter DATA_WIDTH = 8) (
 
   always @(posedge clk)
   begin: metastability
-      if(!rst_n_i) begin
-        meta <= 1'b1;
-        rx   <= 1'b1;
-      end else begin
-        meta <= rx_i;
-        rx <= meta;
-      end
+    meta <= rx_i;
+    rx <= meta;
   end
 
 

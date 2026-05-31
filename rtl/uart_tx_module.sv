@@ -1,7 +1,3 @@
-`include "tx.sv"
-`include "bau_gen.sv"
-`include "FIFO.sv"
-
 module uart_tx_module #(parameter DATA_WIDTH = 8) (
     input wire clk,
     input wire rst_n,

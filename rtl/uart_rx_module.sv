@@ -1,7 +1,3 @@
-`include "bau_gen.sv"
-`include "rx.sv"
-`include "FIFO.sv"
-
 module uart_rx_module #(parameter DATA_WIDTH = 8, parameter FIFO_DEPTH = 16, parameter FIFO_ADDR_WIDTH = 4) (
     input wire clk,
     input wire rst_n,
